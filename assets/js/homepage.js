@@ -1,5 +1,37 @@
+var languageButtonsEl = document.querySelector("#language-buttons");
+var userFormEl = document.querySelector("#user-form");
+var nameInputEl = document.querySelector("#username");
 var repoContainerEl = document.querySelector("#repos-container");
 var repoSearchTerm = document.querySelector("#repo-search-term");
+
+var formSubmitHandler = function(event) {
+  // prevent page from refreshing
+  event.preventDefault();
+
+  // get value from input element
+  var username = nameInputEl.value.trim();
+
+  if (username) {
+    getUserRepos(username);
+
+    // clear old content
+    repoContainerEl.textContent = "";
+    nameInputEl.value = "";
+  } else {
+    alert("Please enter a GitHub username");
+  }
+};
+
+var buttonClickHandler = function(event) {
+  var language = event.target.getAttribute("data-language");
+
+  if (language) {
+    getFeaturedRepos(language);
+
+    // clear old content
+    repoContainerEl.textContent = "";
+  }
+};
 
 var getUserRepos = function(user) {
     // format the github api url
@@ -14,28 +46,27 @@ var getUserRepos = function(user) {
             displayRepos(data, user);
           });
         } else {
-          alert("Error: GitHub User Not Found");
+          alert("Error: " + response.statusText);
         }
       })
       .catch(function(error) {
-        // Notice this `.catch()` getting chained onto the end of the `.then()` method
         alert("Unable to connect to GitHub");
       });
 };
-var userFormEl = document.querySelector("#user-form");
-var nameInputEl = document.querySelector("#username");
-var formSubmitHandler = function(event) {
-  event.preventDefault();
-  // get value from input element
-var username = nameInputEl.value.trim();
 
-if (username) {
-  getUserRepos(username);
-  nameInputEl.value = "";
-} else {
-  alert("Please enter a GitHub username");
-}
-  console.log(event);
+var getFeaturedRepos = function(language) {
+  var apiUrl = "https://api.github.com/search/repositories?q=" 
+  + language + "+is:featured&sort=help-wanted-issues";
+
+  fetch(apiUrl).then(function(response) {
+    if (response.ok) {
+      response.json().then(function(data) {
+        displayRepos(data.items, language);
+      });  
+    } else {
+      alert("Error: " + response.statusText);
+    }
+  });
 };
 
 var displayRepos = function(repos, searchTerm) {
@@ -44,12 +75,9 @@ var displayRepos = function(repos, searchTerm) {
     repoContainerEl.textContent = "No repositories found!";
     return;
   }
-  // clear old content
-  repoContainerEl.textContent = "";
+  
   repoSearchTerm.textContent = searchTerm;
-  console.log(repos);
-  console.log(searchTerm);
-
+  
   // loop over repos
   for (var i = 0; i < repos.length; i++) {
     // format repo name
@@ -87,3 +115,4 @@ var displayRepos = function(repos, searchTerm) {
   }
 };
 userFormEl.addEventListener("submit", formSubmitHandler);
+languageButtonsEl.addEventListener("click", buttonClickHandler);
